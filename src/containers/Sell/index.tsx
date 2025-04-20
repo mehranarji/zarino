@@ -7,24 +7,28 @@ const Sell: FC = () => {
     const [priceStr, setPriceStr] = useState("");
     const [wageStr, setWageStr] = useState("");
     const [weightStr, setWeightStr] = useState("");
+    const [taxStr, setTaxStr] = useState("");
     const [profitStr, setProfitStr] = useState("");
     const wageInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
     const result = useMemo(() => {
+        const profit = +profitStr;
         const price = +priceStr;
         const wage = +wageStr;
-        const profit = +profitStr;
+        const tax = +taxStr;
         const weight = parseFloat(weightStr);
 
-        let result = price;
+        let totalCost = (price + wage) * weight;
+        totalCost += totalCost * (profit / 100);
 
-        result += result * (wage / 100);
-        result += result * (profit / 100);
-        result = result * weight;
+        let profitAndWage = totalCost - (weight * price);
+        let vat = profitAndWage * (tax / 100);
+
+        let result = totalCost + vat;
 
         return result || null;
-    }, [priceStr, wageStr, weightStr, profitStr]);
+    }, [priceStr, wageStr, weightStr, profitStr, taxStr]);
 
     const onSubmit = () => {
         weightInputRef.current?.focus();
@@ -32,6 +36,7 @@ const Sell: FC = () => {
         profitStr && localStorage.setItem("profit", profitStr);
         priceStr && localStorage.setItem("price", priceStr);
         wageStr && localStorage.setItem("wage", wageStr);
+        taxStr && localStorage.setItem("tax", taxStr);
     };
 
     useEffect(() => {
@@ -46,6 +51,7 @@ const Sell: FC = () => {
         setProfitStr(localStorage.getItem("profit") || "");
         setPriceStr(localStorage.getItem("price") || "");
         setWageStr(localStorage.getItem("wage") || "");
+        setTaxStr(localStorage.getItem("tax") || "");
 
         weightInputRef.current?.focus();
     }, []);
@@ -69,6 +75,17 @@ const Sell: FC = () => {
                     onFocus={(ev) => ev.target.select()}
                     onChange={(ev) => setPriceStr(ev.target.value)}
                     label={<InputRowLabel title="نرخ" />}
+                />
+                <InputRow
+                    inputMode="tel"
+                    dir="ltr"
+                    className="text-left"
+                    value={taxStr}
+                    min={0}
+                    step={500}
+                    onFocus={(ev) => ev.target.select()}
+                    onChange={(ev) => setTaxStr(ev.target.value)}
+                    label={<InputRowLabel title="مالیات" />}
                 />
                 <InputRow
                     inputMode="tel"
@@ -106,17 +123,9 @@ const Sell: FC = () => {
                 <button type="submit" className="sr-only" tabIndex={-1}>
                     Submit
                 </button>
-
-                <InputRow
-                    className="text-left"
-                    dir="ltr"
-                    disabled
-                    value={result?.toLocaleString() || "Shrug"}
-                    label="مجموع"
-                />
             </form>
 
-            {/* <SellActionSheet result={result} /> */}
+            <SellActionSheet result={result} />
         </>
     );
 };
